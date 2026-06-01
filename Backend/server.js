@@ -2,27 +2,50 @@ import express from "express"
 import http from "http"
 import cors from "cors"
 import dotenv from "dotenv"
+import cookieParser from "cookie-parser"
+import mongoose from "mongoose"
+import connectDB from "./config/db.js"
+import authRoutes from "./routes/auth.js"
+import userRoutes from "./routes/user.js"
 
 dotenv.config();
 const app=express();
 const server=http.createServer(app);
 
-app.use(cors());
+connectDB();
+
 app.use(express.urlencoded({extended:true}))
 app.use(express.json())
 
-app.get("/",(req,res)=>{
-    res.json({message:"server is running"});
-})
+app.use(cookieParser());
 
-app.use((err,req,res,next)=>{
-    console.error(err);
-    res.status(500).json({
-        message:"Internal Server Error",
+app.use(
+    cors({
+        origin: "http://localhost:5173",
+        credentials: true,
     })
-})
+);
 
-app.listen(5000,()=>{
-    console.log("server is listening to ports 5000");
-})
+app.use(
+    "/api/auth",
+    authRoutes
+);
 
+app.use(
+    "/api/users",
+    userRoutes
+);
+
+app.get("/", (req, res) => {
+    res.send("API Running...");
+});
+
+
+const PORT =
+    process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(
+        `Server running on port ${PORT}`
+    );
+});
