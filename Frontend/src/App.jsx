@@ -8,6 +8,9 @@ import { Route,Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Landing from './pages/LandingPage.jsx'
 import Feed from './pages/Feed.jsx'
+import MapView from './pages/MapView.jsx';
+import CreatePost from './pages/CreatePost.jsx'
+import PostDetail from './pages/PostDetail.jsx'
 
 function App() {
 
@@ -21,13 +24,12 @@ function App() {
         <Route path="/forgot-password"       element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/feed" element={
-          <ProtectedRoute>
             <Feed />
-            {/* <div>Feed coming soon</div> */}
-          </ProtectedRoute>
         }/>
- 
-        <Route path="/"  element={<Landing/>} />
+        <Route path="/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>}/>
+        <Route path='/map' element={<ProtectedRoute><MapView/></ProtectedRoute>}/>
+        <Route path="/"  element={<Landing/>}/>
+        <Route path="/posts/:id" element={<PostDetail/>} />
         {/* <Route path="*"  element={<Navigate to="/feed" replace />} /> */}
  
       </Routes>
