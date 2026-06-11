@@ -1,14 +1,17 @@
+import dotenv from "dotenv"
+dotenv.config();
 import express from "express"
 import http from "http"
 import cors from "cors"
-import dotenv from "dotenv"
 import cookieParser from "cookie-parser"
 import mongoose from "mongoose"
 import connectDB from "./config/db.js"
 import authRoutes from "./routes/auth.js"
 import userRoutes from "./routes/user.js"
+import { Server } from "socket.io";
+import postRoutes from "./routes/posts.js"
+import uploadRoutes from "./routes/upload.js"
 
-dotenv.config();
 const app=express();
 const server=http.createServer(app);
 
@@ -19,9 +22,21 @@ app.use(express.json())
 
 app.use(cookieParser());
 
+const io=new Server(
+    server,
+    {
+        cors:{
+            origin:process.env.CLIENT_URL,
+            credentials:true,
+        },
+    }
+);
+
+app.set("io",io);
+
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: process.env.CLIENT_URL,
         credentials: true,
     })
 );
@@ -35,6 +50,13 @@ app.use(
     "/api/users",
     userRoutes
 );
+
+app.use(
+    "/api/posts",
+    postRoutes
+);
+
+app.use("/api/upload",uploadRoutes);
 
 app.get("/", (req, res) => {
     res.send("API Running...");

@@ -44,7 +44,7 @@ export const registerUser=async (req,res) => {
             },
             process.env.JWT_SECRET,
             {
-                expiresIn:"15s",
+                expiresIn:"1d",
             }
         )
 
@@ -123,7 +123,7 @@ export const loginUser = async(req,res)=>{
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "15s",
+                expiresIn: "1d",
             }
         );
 
@@ -205,7 +205,7 @@ export const refresh=async (req,res) => {
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: "15m",
+                expiresIn: "1d",
             }
         );
 
@@ -259,7 +259,6 @@ export const forgetPassword=async (req,res) => {
     "Password reset",
     message
 );
-
     res.status(200).json({
         success:true,
         message:"Reset link send to email",
