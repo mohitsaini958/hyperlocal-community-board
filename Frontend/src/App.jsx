@@ -11,6 +11,7 @@ import Feed from './pages/Feed.jsx'
 import MapView from './pages/MapView.jsx';
 import CreatePost from './pages/CreatePost.jsx'
 import PostDetail from './pages/PostDetail.jsx'
+import { ToastContainer } from './components/Toast.jsx'
 
 function App() {
 
@@ -34,6 +35,7 @@ function App() {
  
       </Routes>
     </AuthProvider>
+    <ToastContainer/>
     </>
   )
 }

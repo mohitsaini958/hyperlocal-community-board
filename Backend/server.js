@@ -11,6 +11,9 @@ import userRoutes from "./routes/user.js"
 import { Server } from "socket.io";
 import postRoutes from "./routes/posts.js"
 import uploadRoutes from "./routes/upload.js"
+import commentRoutes from "./routes/comments.js"
+import reportRoutes from "./routes/report.js"
+import notificationRoutes from "./routes/notifications.js"
 
 const app=express();
 const server=http.createServer(app);
@@ -46,6 +49,8 @@ app.use(
     authRoutes
 );
 
+app.use("/api/comments",commentRoutes);
+
 app.use(
     "/api/users",
     userRoutes
@@ -56,7 +61,11 @@ app.use(
     postRoutes
 );
 
+app.use("/api",reportRoutes);
+
 app.use("/api/upload",uploadRoutes);
+
+app.use("/api/notifications",notificationRoutes);
 
 app.get("/", (req, res) => {
     res.send("API Running...");

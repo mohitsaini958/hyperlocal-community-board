@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useGeolocation from "../hooks/useGeolocation";
 import axios from "../api/axios";
 import PostCard from "../components/PostCard";
+import NotificationBell from "../components/NotificationBell";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -491,8 +492,6 @@ export default function Feed() {
     refetch,
   } = useGeolocation();
 
-  console.log(lat)
-  console.log(lng)
   // feed state
   const [posts,     setPosts]     = useState([]);
   const [loading,   setLoading]   = useState(false);
@@ -615,13 +614,14 @@ export default function Feed() {
             </div>
           </div>
 
-          <button
+          {/* <button
             className="feed-bell"
             onClick={() => navigate("/notifications")}
             aria-label="Notifications">
             <i className="ti ti-bell"
               style={{fontSize:18, color:"#555"}} aria-hidden="true"/>
-          </button>
+          </button> */}
+          <NotificationBell/>
         </div>
 
         {/* CATEGORY FILTER PILLS */}
