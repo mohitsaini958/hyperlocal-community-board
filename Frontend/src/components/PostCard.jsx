@@ -245,7 +245,7 @@ const PostCard = ({ post, userLat, userLng }) => {
       <div style={cardStyles.title}>{post.title}</div>
 
       {/* ── IMAGES — shown before body when present ── */}
-      <ImageBlock images={post.images}/>
+      <ImageBlock images={post.images} />
 
       {/* ── BODY PREVIEW — only when no images ── */}
       {post.body && !post.images?.length && (

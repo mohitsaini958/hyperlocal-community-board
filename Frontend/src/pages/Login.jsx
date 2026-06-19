@@ -449,7 +449,7 @@ export default function Login() {
     try {
         const res=await api.post("/auth/login",form);
         const {accessToken,user,}=res.data;
-        login(accessToken,user);
+        login(user,accessToken);
         navigate("/feed");
     } catch (err) {
       setGlobalErr(err.response?.data?.message || "Something went wrong");

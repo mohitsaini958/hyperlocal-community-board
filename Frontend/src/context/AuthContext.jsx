@@ -11,6 +11,7 @@ export const AuthProvider=({children})=>{
     const login=(userData,token)=>{
         setUser(userData);
         setAccessToken(token);
+        localStorage.setItem("userId",userData.id);
         localStorage.setItem("accessToken",token);
     };
 
@@ -18,6 +19,7 @@ export const AuthProvider=({children})=>{
         setUser(null);
         setAccessToken(null);
         localStorage.removeItem("accessToken");
+        localStorage.removeItem("userId");
     };
 
     const isAuthenticated=!!accessToken;

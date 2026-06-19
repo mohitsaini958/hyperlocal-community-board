@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Post from "../models/Post.js";
+import Notifications from "../models/Notifications.js";
 
 export const getNearbyPosts = async (req, res) => {
   try {
@@ -172,7 +173,7 @@ export const deletePost=async (req,res) => {
             });
         }
 
-        if(post.author.toString() !== req.user._id.toString){
+        if(post.author.toString() !== req.user._id.toString()){
             return res.status(403).json({
                 success:false,
                 message:"Not authorised to delete this post",
@@ -199,3 +200,54 @@ export const deletePost=async (req,res) => {
         });
     }
 };
+
+export const toggleVote=async (req,res) => {
+    try {
+        const {id}=req.params;
+        const userId=req.user._id;
+        const post=await Post.findById(id);
+        if(!post){
+            return res.status(404).json({
+                success:false,
+                message:"Post not found",
+            });
+        }
+
+        const alreadyVoted=post.upvotes.some((vote)=>vote.toString()===userId.toString());
+        let action;
+        if(alreadyVoted){
+            post.upvotes=post.upvotes.filter((vote)=>vote.toString()!==userId.toString());
+            action="removed";
+        }
+        else{
+            post.upvotes.push(userId);
+            action="added";
+            if(post.author.toString!==userId.toString()){
+                await Notifications.create({
+                    recipient:post.author,
+                    sender:userId,
+                    post:post._id,
+                    type:"upvote",
+                });
+            }
+        }
+        await post.save();
+        const io=req.app.get("io");
+        io.emit("vote_update",{
+            postId:post._id,
+            voteCount:post.upvotes.length,
+        });
+
+        return res.status(200).json({
+            success:true,
+            action,
+            voteCount:post.upvotes.length,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:error.message,
+        });
+    }
+};
+
