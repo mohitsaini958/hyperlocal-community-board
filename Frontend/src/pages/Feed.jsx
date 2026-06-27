@@ -4,6 +4,7 @@ import useGeolocation from "../hooks/useGeolocation";
 import axios from "../api/axios";
 import PostCard from "../components/PostCard";
 import NotificationBell from "../components/NotificationBell";
+import useSocket from "../hooks/useSocket.js";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -492,6 +493,14 @@ export default function Feed() {
     refetch,
   } = useGeolocation();
 
+  const userId=localStorage.getItem("userId");
+
+  const socket = useSocket(
+  userId,
+  lat,
+  lng
+);
+
   // feed state
   const [posts,     setPosts]     = useState([]);
   const [loading,   setLoading]   = useState(false);
@@ -517,17 +526,68 @@ export default function Feed() {
         setPosts(data.posts);
         setPage(2);
       } else {
-        setPosts(prev => [...prev, ...data]);
+        setPosts(prev => [...prev, ...data.posts]);
         setPage(prev => prev + 1);
       }
 
-      setHasMore(data.length === 20);
+      setHasMore(data.posts.length === 20);
     } catch (err) {
       console.error("Failed to fetch posts:", err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+
+  socket.on(
+    "new_post",
+    (newPost) => {
+
+      setPosts(prev => {
+
+        const exists = prev.some(
+          p => p._id === newPost._id
+        );
+
+        if (exists) return prev;
+
+        return [
+          newPost,
+          ...prev
+        ];
+      });
+
+    }
+  );
+
+  return () => {
+
+    socket.off(
+      "new_post"
+    );
+
+  };
+
+}, [socket]);
+
+useEffect(() => {
+
+    socket.on("post_deleted", ({ postId }) => {
+
+        setPosts(prev =>
+            prev.filter(
+                post => post._id !== postId
+            )
+        );
+
+    });
+
+    return () => {
+        socket.off("post_deleted");
+    };
+
+}, [socket]);
 
   /* ── re-fetch when location or category changes ── */
   useEffect(() => {

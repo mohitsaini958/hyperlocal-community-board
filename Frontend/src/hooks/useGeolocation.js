@@ -88,15 +88,15 @@ const fetchLocation=useCallback(()=>{
     fetchLocation();
  },[fetchLocation]);
 
- useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchLocation();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [fetchLocation]);
+//  useEffect(() => {
+//     const handleVisibilityChange = () => {
+//       if (document.visibilityState === "visible") {
+//         fetchLocation();
+//       }
+//     };
+//     document.addEventListener("visibilitychange", handleVisibilityChange);
+//     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+//   }, [fetchLocation]);
 
   return { lat, lng, neighborhood, error, loading, refetch: fetchLocation };
 };
