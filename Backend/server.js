@@ -14,6 +14,7 @@ import uploadRoutes from "./routes/upload.js"
 import commentRoutes from "./routes/comments.js"
 import reportRoutes from "./routes/report.js"
 import notificationRoutes from "./routes/notifications.js"
+import setupGeoSocket from "./sockets/geoSockets.js";
 
 const app=express();
 const server=http.createServer(app);
@@ -32,6 +33,21 @@ const io=new Server(
             origin:process.env.CLIENT_URL,
             credentials:true,
         },
+    }
+);
+
+io.on(
+    "connection",
+    (socket) => {
+
+        console.log(
+            "User Connected"
+        );
+
+        setupGeoSocket(
+            io,
+            socket
+        );
     }
 );
 
@@ -75,7 +91,7 @@ app.get("/", (req, res) => {
 const PORT =
     process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(
         `Server running on port ${PORT}`
     );

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Post from "../models/Post.js";
 import Notifications from "../models/Notifications.js";
+import { getGeoRoom } from "../utils/getGeoRoom.js";
 
 export const getNearbyPosts = async (req, res) => {
   try {
@@ -107,8 +108,17 @@ export const createPost=async (req,res) => {
             "username avatar reputation"
         );
 
-        const io=req.app.get("io");
-        io.emit("new-post",populatePost);
+        const io = req.app.get("io");
+
+        const roomId = getGeoRoom(
+            Number(latitude),
+            Number(longitude)
+        );
+
+        io.to(roomId).emit(
+            "new_post",
+            post
+        );
 
         return res.status(201).json({
             success:true,
@@ -181,9 +191,15 @@ export const deletePost=async (req,res) => {
         }
 
         await post.deleteOne();
-        const io=req.app.get("io");
-        io.emit("post-deleted",{
-            postId:post._id,
+        const io = req.app.get("io");
+        
+        const room = getGeoRoom(
+            Number(post.location.coordinates[1]), // latitude
+            Number(post.location.coordinates[0])  // longitude
+        );
+
+        io.to(room).emit("post_deleted", {
+            postId: post._id,
         });
 
         res.status(200).json(
@@ -215,6 +231,7 @@ export const toggleVote=async (req,res) => {
 
         const alreadyVoted=post.upvotes.some((vote)=>vote.toString()===userId.toString());
         let action;
+        const io=req.app.get("io");
         if(alreadyVoted){
             post.upvotes=post.upvotes.filter((vote)=>vote.toString()!==userId.toString());
             action="removed";
@@ -223,16 +240,17 @@ export const toggleVote=async (req,res) => {
             post.upvotes.push(userId);
             action="added";
             if(post.author.toString!==userId.toString()){
-                await Notifications.create({
+             const notification=await Notifications.create({
                     recipient:post.author,
                     sender:userId,
                     post:post._id,
                     type:"upvote",
                 });
+                io.to(`user_${post.author}`).emit("notification",notification);
             }
         }
         await post.save();
-        const io=req.app.get("io");
+        
         io.emit("vote_update",{
             postId:post._id,
             voteCount:post.upvotes.length,
