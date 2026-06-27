@@ -50,12 +50,21 @@ export const createComment=async (req,res) => {
             parentComment,
         });
 
-        await Notifications.create({
+       const notification=await Notifications.create({
              recipient: post.author,
              sender: req.user._id,
              post: post._id,
              type: "comment",
         });
+
+        const io =req.app.get("io");
+
+        io.to(
+            `user_${post.author}`
+        ).emit(
+            "notification",
+            notification
+        );
 
         await Post.findByIdAndUpdate(
             postId,
@@ -67,11 +76,14 @@ export const createComment=async (req,res) => {
         );
 
         const populatedComment=await Comment.findById(comment._id).populate("author","username avatar reputation");
-        const io=req.app.get("io");
-        io.emit("new_comment",{
-            postId,
-            comment:populatedComment,
-        });
+
+
+        io.to(
+            `post_${postId}`
+        ).emit(
+            "new_comment",
+            populatedComment
+        );
 
         return res.status(201).json({
             success:true,
