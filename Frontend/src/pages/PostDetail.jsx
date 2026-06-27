@@ -4,6 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "../api/axios";
 import ReportModal from "../components/ReportModal";
 import { showToast } from "../components/Toast";
+import { useEffect } from "react";
+import socket from "../socket";
+
 
 /* ─────────────────────────────────────────
    Styles
@@ -662,6 +665,91 @@ export default function PostDetail() {
   const [hasVoted,      setHasVoted]      = useState(false);
   const [replyingTo,    setReplyingTo]    = useState(null); // comment id being replied to
   const [replyText,     setReplyText]     = useState("");
+
+  useEffect(() => {
+
+  socket.emit(
+    "join_post",
+    id
+  );
+
+  return () => {
+
+    socket.emit(
+      "leave_post",
+      id
+    );
+
+  };
+
+}, [id]);
+
+useEffect(() => {
+
+  socket.on(
+    "new_comment",
+    (comment) => {
+
+      queryClient.setQueryData(
+        ["comments", id],
+        (oldComments = []) => {
+
+          const exists =
+            oldComments.some(
+              c => c._id === comment._id
+            );
+
+          if (exists)
+            return oldComments;
+
+          return [
+            ...oldComments,
+            comment,
+          ];
+        }
+      );
+
+    }
+  );
+
+  return () => {
+
+    socket.off(
+      "new_comment"
+    );
+
+  };
+
+}, [id, queryClient]);
+
+useEffect(() => {
+
+  socket.on(
+    "vote_update",
+    (data) => {
+
+      if (
+        data.postId !== id
+      ) {
+        return;
+      }
+
+      setVoteCount(
+        data.voteCount
+      );
+
+    }
+  );
+
+  return () => {
+
+    socket.off(
+      "vote_update"
+    );
+
+  };
+
+}, [id]);
 
    const userId=localStorage.getItem("userId");
   let currentUserId = "";
