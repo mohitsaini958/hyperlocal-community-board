@@ -345,12 +345,12 @@ const styles = `
 `;
 
 const CATEGORIES = [
-  { value: "Alert",      label: "🚨 Alert",     bg: "#ef4444" },
-  { value: "Lost",   label: "🐾 Lost pet",  bg: "#f97316" },
-  { value: "free-stuff", label: "📦 Free stuff", bg: "#1D9E75" },
-  { value: "Event",      label: "🗓 Event",      bg: "#8b5cf6" },
-  { value: "question",   label: "❓ Question",   bg: "#3b82f6" },
-  { value: "general",    label: "💬 General",    bg: "#6b7280" },
+  { value: "alert",      label: "🚨 Alert",      bg: "#ef4444" },
+  { value: "lost-pet",   label: "🐾 Lost pet",   bg: "#f97316" },
+  { value: "free-stuff", label: "📦 Free stuff",  bg: "#1D9E75" },
+  { value: "event",      label: "🗓 Event",       bg: "#8b5cf6" },
+  { value: "question",   label: "❓ Question",    bg: "#3b82f6" },
+  { value: "general",    label: "💬 General",     bg: "#6b7280" },
 ];
 
 const TITLE_MAX = 100;

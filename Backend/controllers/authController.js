@@ -2,21 +2,18 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken"
 import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
+import AppError from "../utils/AppError.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 
 
-export const registerUser=async (req,res) => {
-    try {
+export const registerUser=asyncHandler(async (req,res,next) => {
         const {username,email,password,confirmPassword}=req.body;
         if(!username || !email || !password || !confirmPassword){
-            return res.status(400).json({
-                message:"All field are required",
-            });
+            return next(new AppError("All field are required",400));
         }
 
         if(password!==confirmPassword){
-            return res.status(400).json({
-                message:"Passwords do not match",
-            });
+            return next(new AppError("Password do not match",400));
         }
 
         const existingUser=await User.findOne({
@@ -27,9 +24,7 @@ export const registerUser=async (req,res) => {
         });
 
         if(existingUser){
-            return res.status(400).json({
-                message:"Email or User already exist",
-            });
+            return next(new AppError("Email or username already exists",409))
         }
 
         const user=await User.create({
@@ -74,7 +69,7 @@ export const registerUser=async (req,res) => {
             }
         );
 
-        res.status(200).json({
+        res.status(201).json({
             success:true,
             message:"User Registered Successfully",
             accessToken,
@@ -84,37 +79,24 @@ export const registerUser=async (req,res) => {
                 email:user.email,
             }
         })
-    } catch (error) {
-        res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+})
 
-export const loginUser = async(req,res)=>{
-    try {
+export const loginUser = asyncHandler(async(req,res,next)=>{
         const {email,password}=req.body;
         if(!email || !password){
-            return res.status(400).json({
-                message:"Email and Password are required",
-            });
+            return next(new AppError("Email and Password are required",400));
         }
 
         const user=await User.findOne({email});
 
         if(!user){
-            return res.status(404).json({
-                message:"User not found"
-            });
+            return next(new AppError("User not found",404));
         }
 
         const isMatch=await user.comparePassword(password);
 
         if(!isMatch){
-            return res.status(400).json({
-                message:"Invalid Credentials",
-            });
+            return next(new AppError("Invalid Credentials",400));
         }
 
          const accessToken = jwt.sign(
@@ -163,23 +145,13 @@ export const loginUser = async(req,res)=>{
                 email:user.email
             }
         })
+})
 
-    } catch (error) {
-        res.status(500).json({
-            message:error.message
-        })
-    }
-}
-
-export const refresh=async (req,res) => {
-    try {
+export const refresh=asyncHandler(async (req,res,next) => {
         const refreshToken=req.cookies.refreshToken;
 
         if(!refreshToken){
-            return res.status(401).json({
-                success:false,
-                message:"Refresh token missing",
-            });
+            return next(new AppError("Refresh token missing",401));
         }
 
         const decoded=jwt.verify(
@@ -192,11 +164,7 @@ export const refresh=async (req,res) => {
         );
 
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message:
-                    "User not found",
-            });
+            return next(new AppError("User not found",404));
         }
 
          const accessToken = jwt.sign(
@@ -215,27 +183,16 @@ export const refresh=async (req,res) => {
         });
 
         
-    } catch (error) {
-        res.status(401).json({
-            success: false,
-            message:
-                 "Invalid or expired refresh token",
-        });
-    }
-}
+    })
 
-export const forgetPassword=async (req,res) => {
-    try{ const {email}=req.body;
+export const forgetPassword=asyncHandler(async (req,res,next) => {
+   const {email}=req.body;
     if(!email){
-        return res.status(400).json({
-            message:"Email is required",
-        })
+        return next(new AppError("Email is required",400));
     }
     const user=await User.findOne({email});
     if(!user){
-      return  res.status(404).json({
-            message:"user not found"
-        })
+        return next(new AppError("user not found",404));
     }
 
     const resetToken=crypto.randomBytes(32).toString("hex");
@@ -263,30 +220,17 @@ export const forgetPassword=async (req,res) => {
         success:true,
         message:"Reset link send to email",
     });
-    }
-    catch(error){
-        res.status(500).json({
-            success:false,
-            message:error.message,
-        })
-    }
-}
+})
 
-export const resetPassword=async (req,res) => {
-    try {
-
+export const resetPassword=asyncHandler(async (req,res,next) => {
         const {password,confirmPassword}=req.body;
 
         if(!password || !confirmPassword){
-            return res.status(400).json({
-                message:"password and confirmPassword are required",
-            })
+            return next(new AppError("password and confirmPassword are required",400));
         }
 
         if(password!==confirmPassword){
-            return res.status(400).json({
-            message: "Passwords do not match"
-        });
+            return next(new AppError("Password does not match",400));
         }
 
         const token=req.params.token;
@@ -302,9 +246,7 @@ export const resetPassword=async (req,res) => {
         });
 
         if(!user){
-            return res.status(400).json({
-                message:"Invalid or expired token",
-            });
+            return next(new AppError("Invalid or expired token",400));
         }
 
         user.password=password;
@@ -319,11 +261,5 @@ export const resetPassword=async (req,res) => {
             message:
                 "Password reset successful",
         });
-    } catch (error) {
-         res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-}
+})
 

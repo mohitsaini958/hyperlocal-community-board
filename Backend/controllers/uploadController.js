@@ -1,13 +1,11 @@
 import streamifier from "streamifier"
 import cloudinary from "../config/cloudinary.js"
+import asyncHandler from "../middlewares/asyncHandler.js";
+import AppError from "../utils/AppError.js";
 
-export const uploadImages=async (req,res) => {
-    try {
+export const uploadImages=asyncHandler(async (req,res,next) => {
         if(!req.files || req.files.length===0){
-            return res.status(400).json({
-                success:false,
-                message:"No files uploaded",
-            });
+            return next(new AppError("No files uploaded",400));
         }
 
       const uploadPromises =req.files.map((file) =>new Promise(
@@ -40,10 +38,4 @@ export const uploadImages=async (req,res) => {
                 success:true,
                 urls,
             });
-    } catch (error) {
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+    })

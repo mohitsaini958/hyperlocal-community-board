@@ -1,23 +1,18 @@
 import Report from "../models/Report.js";
 import Post from "../models/Post.js";
+import AppError from "../utils/AppError.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 
-export const createReport=async (req,res) => {
-    try {
+export const createReport=asyncHandler(async (req,res,next) => {
         const {id}=req.params;
         const {reason}=req.body;
         if(!reason){
-            return res.status(400).json({
-                success:false,
-                message:"Reason is required",
-            });
+            return next(new AppError("Reason is required",400));
         }
 
         const post=await Post.findById(id);
         if(!post){
-            return res.status(401).json({
-                success:false,
-                message:"Post not found",
-            });
+            return next(new AppError("Post not found",401));
         }
 
         const existingReport = await Report.findOne({
@@ -26,10 +21,7 @@ export const createReport=async (req,res) => {
         });
 
         if(existingReport){
-            return res.status(400).json({
-                success:false,
-                message:"You have already reported this post",
-            });
+            return next(new AppError("You have already reported this post",400));
         }
 
         const report=await Report.create({
@@ -44,11 +36,4 @@ export const createReport=async (req,res) => {
             message:"Reported submitted successfully",
             report,
         });
-
-    } catch (error) {
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+})

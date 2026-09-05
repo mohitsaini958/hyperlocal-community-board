@@ -24,9 +24,7 @@ function App() {
         <Route path="/login"                 element={<Login />} />
         <Route path="/forgot-password"       element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/feed" element={
-            <Feed />
-        }/>
+        <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>}/>
         <Route path="/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>}/>
         <Route path='/map' element={<ProtectedRoute><MapView/></ProtectedRoute>}/>
         <Route path="/"  element={<Landing/>}/>

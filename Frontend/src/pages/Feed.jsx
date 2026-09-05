@@ -6,6 +6,7 @@ import PostCard from "../components/PostCard";
 import NotificationBell from "../components/NotificationBell";
 import useSocket from "../hooks/useSocket.js";
 
+
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -312,22 +313,22 @@ const styles = `
 /* ─────────────────────────────────── */
 
 const CATEGORIES = [
-  { label: "All",         value: ""           },
-  { label: "🚨 Alert",    value: "Alert"      },
-  { label: "🐾 Lost pet", value: "Lost"   },
-  { label: "📦 Free",     value: "free-stuff" },
-  { label: "🗓 Event",    value: "event"      },
-  { label: "❓ Question", value: "question"   },
-  { label: "💬 General",  value: "general"    },
+  { label: "All", value: "" },
+  { label: "🚨 Alert", value: "alert" },
+  { label: "🐾 Lost pet", value: "lost-pet" },
+  { label: "📦 Free", value: "free-stuff" },
+  { label: "🗓 Event", value: "event" },
+  { label: "❓ Question", value: "question" },
+  { label: "💬 General", value: "general" },
 ];
 
 const BADGE = {
-  "alert":      { bg: "#FCEBEB", color: "#791F1F" },
-  "lost-pet":   { bg: "#FAEEDA", color: "#633806" },
+  alert: { bg: "#FCEBEB", color: "#791F1F" },
+  "lost-pet": { bg: "#FAEEDA", color: "#633806" },
   "free-stuff": { bg: "#E1F5EE", color: "#085041" },
-  "event":      { bg: "#EEEDFE", color: "#3C3489" },
-  "question":   { bg: "#E6F1FB", color: "#0C447C" },
-  "general":    { bg: "#F1F1EE", color: "#555555" },
+  event: { bg: "#EEEDFE", color: "#3C3489" },
+  question: { bg: "#E6F1FB", color: "#0C447C" },
+  general: { bg: "#F1F1EE", color: "#555555" },
 };
 
 /* ─────────────────────────────────── */
@@ -336,31 +337,44 @@ const BADGE = {
 
 const timeAgo = (date) => {
   const s = (Date.now() - new Date(date)) / 1000;
-  if (s < 60)    return "just now";
-  if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return `${Math.floor(s / 86400)}d ago`;
 };
 
 const calcDist = (lat1, lng1, lat2, lng2) => {
   const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) ** 2;
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
   const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return d < 1 ? `${Math.round(d * 1000)}m` : `${d.toFixed(1)}km`;
 };
- 
- const NookMark = () => (
-  <svg width="16" height="16" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-    <circle cx="11" cy="8" r="4.5" stroke="white" strokeWidth="2.2"/>
-    <circle cx="11" cy="8" r="1.8" fill="white"/>
-    <line x1="11" y1="12.5" x2="11" y2="19.5"
-      stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+
+const NookMark = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 22 22"
+    fill="none"
+    aria-hidden="true"
+  >
+    <circle cx="11" cy="8" r="4.5" stroke="white" strokeWidth="2.2" />
+    <circle cx="11" cy="8" r="1.8" fill="white" />
+    <line
+      x1="11"
+      y1="12.5"
+      x2="11"
+      y2="19.5"
+      stroke="white"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -370,11 +384,11 @@ const calcDist = (lat1, lng1, lat2, lng2) => {
 
 const SkeletonCard = () => (
   <div className="feed-skel">
-    <div className="skel skel-badge"/>
-    <div className="skel skel-title"/>
-    <div className="skel skel-line"/>
-    <div className="skel skel-line2"/>
-    <div className="skel skel-foot"/>
+    <div className="skel skel-badge" />
+    <div className="skel skel-title" />
+    <div className="skel skel-line" />
+    <div className="skel skel-line2" />
+    <div className="skel skel-foot" />
   </div>
 );
 
@@ -382,83 +396,27 @@ const SkeletonCard = () => (
 /*  PostCard                           */
 /* ─────────────────────────────────── */
 
-// const PostCard = ({ post, userLat, userLng }) => {
-//   const navigate = useNavigate();
-//   const badge    = BADGE[post.category] || BADGE.general;
-
-//   const dist = userLat && userLng && post.location?.coordinates
-//     ? calcDist(userLat, userLng,
-//         post.location.coordinates[1],
-//         post.location.coordinates[0])
-//     : null;
-
-//   return (
-//     <div
-//       className="feed-card"
-//       onClick={() => navigate(`/posts/${post._id}`)}>
-
-//       {/* top row — badge + meta */}
-//       <div className="feed-card-top">
-//         <div style={{display:"flex",alignItems:"center",gap:6}}>
-//           <span
-//             className="feed-badge"
-//             style={{background: badge.bg, color: badge.color}}>
-//             {post.category.replace("-", " ")}
-//           </span>
-//           {post.isAnonymous && (
-//             <span className="feed-anon">anonymous</span>
-//           )}
-//         </div>
-//         <div className="feed-meta">
-//           {dist && (
-//             <>
-//               <i className="ti ti-map-pin" style={{fontSize:11}} aria-hidden="true"/>
-//               {dist}
-//               <span>·</span>
-//             </>
-//           )}
-//           <span>{timeAgo(post.createdAt)}</span>
-//         </div>
-//       </div>
-
-//       {/* title */}
-//       <div className="feed-card-title">{post.title}</div>
-
-//       {/* body preview — 2 lines max */}
-//       {post.body && (
-//         <div className="feed-card-body">{post.body}</div>
-//       )}
-
-//       {/* footer — vote count + comment count + distance */}
-//       <div className="feed-card-footer">
-//         <div className="feed-card-stat">
-//           <i className="ti ti-arrow-up" style={{fontSize:14}} aria-hidden="true"/>
-//           {post.upvotes?.length ?? 0}
-//         </div>
-//         <div className="feed-card-stat">
-//           <i className="ti ti-message" style={{fontSize:14}} aria-hidden="true"/>
-//           {post.commentCount ?? 0}
-//         </div>
-//         {dist && (
-//           <div className="feed-card-dist">
-//             <i className="ti ti-map-pin" style={{fontSize:11}} aria-hidden="true"/>
-//             {" "}{dist}
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
 /* ─────────────────────────────────── */
 /*  LocationError                      */
 /* ─────────────────────────────────── */
 
 const LOC_MESSAGES = {
-  PERMISSION_DENIED:    { title: "Location access blocked",    body: "Nook needs your location to show nearby posts. Please enable it in your browser settings." },
-  POSITION_UNAVAILABLE: { title: "Location unavailable",       body: "We couldn't detect your location. Make sure your device's location services are on." },
-  TIMEOUT:              { title: "Location request timed out", body: "This took too long. Check your connection and try again." },
-  UNKNOWN:              { title: "Location error",             body: "Something went wrong detecting your location. Please try again." },
+  PERMISSION_DENIED: {
+    title: "Location access blocked",
+    body: "Nook needs your location to show nearby posts. Please enable it in your browser settings.",
+  },
+  POSITION_UNAVAILABLE: {
+    title: "Location unavailable",
+    body: "We couldn't detect your location. Make sure your device's location services are on.",
+  },
+  TIMEOUT: {
+    title: "Location request timed out",
+    body: "This took too long. Check your connection and try again.",
+  },
+  UNKNOWN: {
+    title: "Location error",
+    body: "Something went wrong detecting your location. Please try again.",
+  },
 };
 
 const LocationError = ({ error, onRetry }) => {
@@ -466,8 +424,11 @@ const LocationError = ({ error, onRetry }) => {
   return (
     <div className="feed-loc-err">
       <div className="feed-loc-err-icon">
-        <i className="ti ti-map-pin-off"
-          style={{fontSize:22, color:"#ef4444"}} aria-hidden="true"/>
+        <i
+          className="ti ti-map-pin-off"
+          style={{ fontSize: 22, color: "#ef4444" }}
+          aria-hidden="true"
+        />
       </div>
       <h3>{msg.title}</h3>
       <p>{msg.body}</p>
@@ -487,26 +448,27 @@ export default function Feed() {
 
   // location
   const {
-    lat, lng, neighborhood,
+    lat,
+    lng,
+    neighborhood,
     error: locError,
     loading: locLoading,
     refetch,
   } = useGeolocation();
 
-  const userId=localStorage.getItem("userId");
+  console.log(neighborhood);
 
-  const socket = useSocket(
-  userId,
-  lat,
-  lng
-);
+  const userId = localStorage.getItem("userId");
+
+  const socket = useSocket(userId, lat, lng);
 
   // feed state
-  const [posts,     setPosts]     = useState([]);
-  const [loading,   setLoading]   = useState(false);
-  const [category,  setCategory]  = useState("");
-  const [page,      setPage]      = useState(1);
-  const [hasMore,   setHasMore]   = useState(true);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   /* ── fetch posts ── */
   const fetchPosts = async (reset = false) => {
@@ -517,7 +479,7 @@ export default function Feed() {
       const currentPage = reset ? 1 : page;
       const { data } = await axios.get("/posts/nearby", {
         params: {
-          page:     currentPage,
+          page: currentPage,
           category: category || undefined,
         },
       });
@@ -526,12 +488,13 @@ export default function Feed() {
         setPosts(data.posts);
         setPage(2);
       } else {
-        setPosts(prev => [...prev, ...data.posts]);
-        setPage(prev => prev + 1);
+        setPosts((prev) => [...prev, ...data.posts]);
+        setPage((prev) => prev + 1);
       }
 
       setHasMore(data.posts.length === 20);
     } catch (err) {
+      setFetchError(true);
       console.error("Failed to fetch posts:", err.message);
     } finally {
       setLoading(false);
@@ -539,55 +502,30 @@ export default function Feed() {
   };
 
   useEffect(() => {
-
-  socket.on(
-    "new_post",
-    (newPost) => {
-
-      setPosts(prev => {
-
-        const exists = prev.some(
-          p => p._id === newPost._id
-        );
+    socket.on("new_post", (newPost) => {
+      setPosts((prev) => {
+        const exists = prev.some((p) => p._id === newPost._id);
 
         if (exists) return prev;
 
-        return [
-          newPost,
-          ...prev
-        ];
+        return [newPost, ...prev];
       });
-
-    }
-  );
-
-  return () => {
-
-    socket.off(
-      "new_post"
-    );
-
-  };
-
-}, [socket]);
-
-useEffect(() => {
-
-    socket.on("post_deleted", ({ postId }) => {
-
-        setPosts(prev =>
-            prev.filter(
-                post => post._id !== postId
-            )
-        );
-
     });
 
     return () => {
-        socket.off("post_deleted");
+      socket.off("new_post");
     };
+  }, [socket]);
 
-}, [socket]);
+  useEffect(() => {
+    socket.on("post_deleted", ({ postId }) => {
+      setPosts((prev) => prev.filter((post) => post._id !== postId));
+    });
+
+    return () => {
+      socket.off("post_deleted");
+    };
+  }, [socket]);
 
   /* ── re-fetch when location or category changes ── */
   useEffect(() => {
@@ -603,8 +541,7 @@ useEffect(() => {
   useEffect(() => {
     const onScroll = () => {
       const nearBottom =
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 300;
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
 
       if (nearBottom && hasMore && !loading) {
         fetchPosts(false);
@@ -623,12 +560,16 @@ useEffect(() => {
         <div className="feed-root">
           <div className="feed-topbar">
             <a href="/" className="feed-logo">
-              <div className="feed-logo-mark"><NookMark /></div>
+              <div className="feed-logo-mark">
+                <NookMark />
+              </div>
               <span className="feed-logo-name">nook</span>
             </a>
           </div>
           <div className="feed-body">
-            {[...Array(5)].map((_, i) => <SkeletonCard key={i}/>)}
+            {[...Array(5)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
         </div>
       </>
@@ -643,11 +584,13 @@ useEffect(() => {
         <div className="feed-root">
           <div className="feed-topbar">
             <a href="/" className="feed-logo">
-              <div className="feed-logo-mark"><NookMark /></div>
+              <div className="feed-logo-mark">
+                <NookMark />
+              </div>
               <span className="feed-logo-name">nook</span>
             </a>
           </div>
-          <LocationError error={locError} onRetry={refetch}/>
+          <LocationError error={locError} onRetry={refetch} />
         </div>
       </>
     );
@@ -658,13 +601,15 @@ useEffect(() => {
     <>
       <style>{styles}</style>
       <div className="feed-root">
-
         {/* TOP BAR */}
         <div className="feed-topbar">
           <div className="feed-topbar-left">
             <div className="feed-loc-icon">
-              <i className="ti ti-map-pin"
-                style={{fontSize:14, color:"#1D9E75"}} aria-hidden="true"/>
+              <i
+                className="ti ti-map-pin"
+                style={{ fontSize: 14, color: "#1D9E75" }}
+                aria-hidden="true"
+              />
             </div>
             <div>
               <div className="feed-loc-name">
@@ -681,16 +626,17 @@ useEffect(() => {
             <i className="ti ti-bell"
               style={{fontSize:18, color:"#555"}} aria-hidden="true"/>
           </button> */}
-          <NotificationBell/>
+          <NotificationBell />
         </div>
 
         {/* CATEGORY FILTER PILLS */}
         <div className="feed-filters">
-          {CATEGORIES.map(c => (
+          {CATEGORIES.map((c) => (
             <button
               key={c.value}
               className={`feed-pill${category === c.value ? " active" : ""}`}
-              onClick={() => setCategory(c.value)}>
+              onClick={() => setCategory(c.value)}
+            >
               {c.label}
             </button>
           ))}
@@ -698,76 +644,103 @@ useEffect(() => {
 
         {/* FEED BODY */}
         <div className="feed-body">
-
           {/* skeleton — first load only */}
-          {loading && posts.length === 0 && (
-            [...Array(5)].map((_, i) => <SkeletonCard key={i}/>)
+          {loading &&
+            posts.length === 0 &&
+            [...Array(5)].map((_, i) => <SkeletonCard key={i} />)}
+
+          {fetchError && !loading && (
+            <div className="feed-loc-err">
+              <div className="feed-loc-err-icon">
+                <i
+                  className="ti ti-wifi-off"
+                  style={{ fontSize: 22, color: "#ef4444" }}
+                  aria-hidden="true"
+                />
+              </div>
+              <h3>Couldn't load posts</h3>
+              <p>Check your connection and try again.</p>
+              <button
+                className="feed-retry"
+                onClick={() => {
+                  setFetchError(false);
+                  fetchPosts(true);
+                }}
+              >
+                Retry
+              </button>
+            </div>
           )}
 
           {/* empty state */}
           {!loading && posts.length === 0 && (
             <div className="feed-empty">
               <div className="feed-empty-icon">
-                <i className="ti ti-map-pin"
-                  style={{fontSize:28, color:"#1D9E75"}} aria-hidden="true"/>
+                <i
+                  className="ti ti-map-pin"
+                  style={{ fontSize: 28, color: "#1D9E75" }}
+                  aria-hidden="true"
+                />
               </div>
               <h3>Nothing nearby yet</h3>
               <p>
                 {category
-                  ? `No ${CATEGORIES.find(c => c.value === category)
-                      ?.label.replace(/^\S+\s/, "")} posts within 2km.`
-                  : "Be the first to post something in your neighbourhood."
-                }
+                  ? `No ${CATEGORIES.find(
+                      (c) => c.value === category,
+                    )?.label.replace(/^\S+\s/, "")} posts within 2km.`
+                  : "Be the first to post something in your neighbourhood."}
               </p>
               <button
                 className="feed-empty-btn"
-                onClick={() => category
-                  ? setCategory("")
-                  : navigate("/create")}>
-                <i className="ti ti-plus" style={{fontSize:14}} aria-hidden="true"/>
+                onClick={() =>
+                  category ? setCategory("") : navigate("/create")
+                }
+              >
+                <i
+                  className="ti ti-plus"
+                  style={{ fontSize: 14 }}
+                  aria-hidden="true"
+                />
                 {category ? "Show all posts" : "Post something"}
               </button>
             </div>
           )}
 
           {/* post cards */}
-          {posts.map(post => (
-            <PostCard
-              key={post._id}
-              post={post}
-              userLat={lat}
-              userLng={lng}
-            />
+          {posts.map((post) => (
+            <PostCard key={post._id} post={post} userLat={lat} userLng={lng} />
           ))}
-          
 
           {/* loading more indicator */}
           {loading && posts.length > 0 && (
             <div className="feed-loading-more">
-              <i className="ti ti-refresh spin-icon"
-                style={{fontSize:15}} aria-hidden="true"/>
+              <i
+                className="ti ti-refresh spin-icon"
+                style={{ fontSize: 15 }}
+                aria-hidden="true"
+              />
               Loading more...
             </div>
           )}
 
           {/* end of feed */}
           {!hasMore && posts.length > 0 && (
-            <div className="feed-end">
-              You've seen all posts within 2km
-            </div>
+            <div className="feed-end">You've seen all posts within 2km</div>
           )}
-
         </div>
 
         {/* FAB — create post */}
         <button
           className="feed-fab"
           onClick={() => navigate("/create")}
-          aria-label="Create post">
-          <i className="ti ti-plus"
-            style={{fontSize:22, color:"#fff"}} aria-hidden="true"/>
+          aria-label="Create post"
+        >
+          <i
+            className="ti ti-plus"
+            style={{ fontSize: 22, color: "#fff" }}
+            aria-hidden="true"
+          />
         </button>
-
       </div>
     </>
   );

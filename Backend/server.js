@@ -15,6 +15,7 @@ import commentRoutes from "./routes/comments.js"
 import reportRoutes from "./routes/report.js"
 import notificationRoutes from "./routes/notifications.js"
 import setupGeoSocket from "./sockets/geoSockets.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 const app=express();
 const server=http.createServer(app);
@@ -86,6 +87,8 @@ app.use("/api/notifications",notificationRoutes);
 app.get("/", (req, res) => {
     res.send("API Running...");
 });
+
+app.use(errorHandler);
 
 
 const PORT =
