@@ -5,7 +5,7 @@ const getNeighborhood = async(lat,lng)=>{
     try {
         const res=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
       { headers: { "Accept-Language": "en" } });
-        const data=res.json();
+        const data=await res.json();
         return (
             data.address?.suburb ||
             data.address?.neighbourhood ||
@@ -55,10 +55,10 @@ const fetchLocation=useCallback(()=>{
 
     navigator.geolocation.getCurrentPosition(async(position)=>{
         const {latitude,longitude}=position.coords;
+        await updateLocation(latitude,longitude);
         setLat(latitude);
         setLng(longitude);
         setLoading(false);
-        await updateLocation(latitude,longitude);
     },
     (err)=>{
         setLoading(false);

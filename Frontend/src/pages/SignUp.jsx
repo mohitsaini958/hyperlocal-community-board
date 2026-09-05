@@ -412,9 +412,9 @@ export default function SignUp() {
       const res=await api.post("/auth/register",form);
       const {accessToken,user,} = res.data;
       login(user,accessToken);
-      navigate("/");
+      navigate("/feed");
     } catch (err) {
-      setGlobalErr(err.message);
+      setGlobalErr(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }

@@ -1,45 +1,32 @@
 import User from "../models/User.js"
+import AppError from "../utils/AppError.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 
-export const updateLocation=async (req,res) => {
-    try {
+export const updateLocation=asyncHandler(async (req,res,next) => {
         const {latitude,longitude,neighborhood,}=req.body;
 
         if(latitude===undefined || longitude===undefined){
-            return res.status(400).json({
-                success:false,
-                message:"Latitude and Longitude are required",
-            });
+            return next(new AppError("Latitude and Longitude are required",400));
         }
 
         if (
             latitude < -90 ||
             latitude > 90
         ) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Invalid latitude",
-            });
+            return next(new AppError("Invalid latitude",400));
         }
 
         if (
             longitude < -180 ||
             longitude > 180
         ) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Invalid longitude",
-            });
+            return next(new AppError("Invalid longitude",400));
         }
 
         const user=await User.findById(req.user._id);
 
         if(!user){
-            return res.status(404).json({
-                success:false,
-                message:"User not found",
-            });
+            return next(new AppError("User not found",404));
         }
 
         user.location={
@@ -67,10 +54,4 @@ export const updateLocation=async (req,res) => {
                 user.neighborhood,
         });
 
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-}
+    })

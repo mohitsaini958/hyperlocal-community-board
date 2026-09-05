@@ -2,19 +2,17 @@ import mongoose from "mongoose";
 import Post from "../models/Post.js";
 import Notifications from "../models/Notifications.js";
 import { getGeoRoom } from "../utils/getGeoRoom.js";
+import AppError from "../utils/AppError.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 
-export const getNearbyPosts = async (req, res) => {
-  try {
+export const getNearbyPosts = asyncHandler(async (req, res,next) => {
     const { page = 1, category } = req.query;
 
     const userLat = req.user.location?.coordinates?.[1];
     const userLng = req.user.location?.coordinates?.[0];
 
     if (userLat === undefined || userLng === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: "User location not set",
-      });
+      return next(new AppError("User location not set",400));
     }
 
     const limit = 20;
@@ -55,28 +53,15 @@ export const getNearbyPosts = async (req, res) => {
       totalPosts: total,
       posts,
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+})
 
-export const createPost=async (req,res) => {
-    try {
+export const createPost=asyncHandler(async (req,res,next) => {
         const {title,body,category,images=[],tags=[],latitude,longitude,radius,isAnonymous}=req.body;
         if(!title||!category){
-            return res.status(400).json({
-                success:false,
-                message:"Title and category are required",
-            });
+            return next(new AppError("Title and category are required",400));
         }
         if(latitude===undefined || longitude===undefined){
-            return res.status(400).json({
-                success:false,
-                message:"Location is required",
-            });
+            return next(new AppError("Location is required",400));
         }
 
         const post=await Post.create({
@@ -125,69 +110,39 @@ export const createPost=async (req,res) => {
             message:"Post created successfully",
             post:populatePost,
         });
-    } catch (error) {
-        
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+})
 
-export const getPost=async (req,res) => {
-    try {
+export const getPost=asyncHandler(async (req,res,next) => {
         const {id}=req.params;
         if(!mongoose.Types.ObjectId.isValid(id)){
-            return res.status(400).json({
-                success:false,
-                message:"Invalid post id",
-            })
+            return next(new AppError("Invalid post id",400));
         }
 
         const post=await Post.findById(id).populate("author","username avatar reputation");
         if(!post){
-            return res.status(400).json({
-                success:false,
-                message:"Post not found",
-            });
+            return next(new AppError("Post not found",400));
         }
 
         res.status(200).json({
             success:true,
             post,
         });
-    } catch (error) {
-        res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+})
 
-export const deletePost=async (req,res) => {
-    try {
+export const deletePost=asyncHandler(async (req,res,next) => {
         const {id}=req.params;
         if(!mongoose.Types.ObjectId.isValid(id)){
-            return res.status(400).json({
-                success:false,
-                message:"Invalid post id",
-            });
+            return next(new AppError("Invalid post id",400));
         }
 
         const post=await Post.findById(id);
 
         if(!post){
-            return res.status(400).json({
-                success:false,
-                message:"Post not found",
-            });
+            return next(new AppError("Post not found",400));
         }
 
         if(post.author.toString() !== req.user._id.toString()){
-            return res.status(403).json({
-                success:false,
-                message:"Not authorised to delete this post",
-            });
+            return next(new AppError("Not authorised to delete this post",403));
         }
 
         await post.deleteOne();
@@ -208,25 +163,14 @@ export const deletePost=async (req,res) => {
                 message:"Post deleted successfully",
             }
         );
+})
 
-    } catch (error) {
-        res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
-
-export const toggleVote=async (req,res) => {
-    try {
+export const toggleVote=asyncHandler(async (req,res,next) => {
         const {id}=req.params;
         const userId=req.user._id;
         const post=await Post.findById(id);
         if(!post){
-            return res.status(404).json({
-                success:false,
-                message:"Post not found",
-            });
+            return next(new AppError("Post not found",404));
         }
 
         const alreadyVoted=post.upvotes.some((vote)=>vote.toString()===userId.toString());
@@ -261,11 +205,5 @@ export const toggleVote=async (req,res) => {
             action,
             voteCount:post.upvotes.length,
         });
-    } catch (error) {
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+    })
 

@@ -1,10 +1,14 @@
 import Comment from "../models/Comment.js";
 import Post from "../models/Post.js";
 import Notifications from "../models/Notifications.js";
+import AppError from "../utils/AppError.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 
-export const getComments=async (req,res) => {
-    try {
+export const getComments=asyncHandler(async (req,res,next) => {
         const {postId}=req.params;
+        if(!postId){
+            return next(new AppError("id is required",400));
+        }
         const comments=await Comment.find({
             post:postId,
         })
@@ -15,31 +19,18 @@ export const getComments=async (req,res) => {
             success:true,
             comments,
         });
-    } catch (error) {
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+    })
 
-export const createComment=async (req,res) => {
-    try {
+export const createComment=asyncHandler(async (req,res,next) => {
         const {postId}=req.params;
         const {body,isAnonymous=false,parentComment=null,}=req.body;
         if(!body){
-            return res.status(400).json({
-                success:false,
-                message:"Comment body is required",
-            });
+            return next(new AppError("Comment body is required",400));
         }
 
         const post=await Post.findById(postId);
         if(!post){
-            return res.status(404).json({
-                success:false,
-                message:"Post not found",
-            });
+            return next(new AppError("Post not found",404));
         }
 
         const comment=await Comment.create({
@@ -90,29 +81,16 @@ export const createComment=async (req,res) => {
             message:"Comment created successfully",
             comment:populatedComment,
         });
-    } catch (error) {
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+})
 
-export const deleteComments=async (req,res) => {
-    try {
+export const deleteComments=asyncHandler(async (req,res,next) => {
         const {id}=req.params;
         const comment=await Comment.findById(id);
         if(!comment){
-            return res.staus(404).json({
-                success:false,
-                message:"Comment not found",
-            });
+            return next(new AppError("Comment not found",404));
         }
         if(comment.author._id.toString()!==req.user._id.toString()){
-            return res.status(403).json({
-                success:false,
-                message:"Not authorized",
-            });
+            return next(new AppError("Not authorized",403));
         }
 
         await Comment.findByIdAndDelete(id);
@@ -136,11 +114,4 @@ export const deleteComments=async (req,res) => {
             success:true,
             message:"Comment deleted successfully",
         });
-
-    } catch (error) {
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        });
-    }
-};
+})
