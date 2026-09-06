@@ -6,8 +6,8 @@ A geo-fenced neighbourhood feed where posts are only visible to people within **
 
 ## Live Demo
 
-> **Frontend:** [your-app.vercel.app](https://your-app.vercel.app)  
-> **API:** [your-api.onrender.com](https://your-api.onrender.com)
+> **Frontend:** [your-app.vercel.app](https://hyperlocal-community-board-dun.vercel.app)  
+> **API:** [your-api.onrender.com](https://hyperlocal-community-board.onrender.com)
 
 📹 [60-second walkthrough — real-time update demo](https://loom.com/your-link)
 
@@ -203,4 +203,5 @@ httpOnly cookies are not accessible to JavaScript, so XSS attacks can't steal th
 ## Author
 
 **Mohit Saini**  
-Self-taught MERN stack developer · [GitHub](https://github.com/mohitsaini958) · [LinkedIn](your-linkedin-url)
+Self-taught MERN stack developer · [GitHub](https://github.com/mohitsaini958) · [LinkedIn](www.linkedin.com/in/mohit-saini-5a445826b)
+
