@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../context/AuthContext.jsx";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -711,6 +713,14 @@ export default function Landing() {
   const catRef  = useRef(null);
   const navRef  = useRef(null);
 
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthContext();
+
+  // if already logged in, skip the landing page entirely
+  useEffect(() => {
+    if (isAuthenticated) navigate("/feed", { replace: true });
+  }, [isAuthenticated, navigate]);
+
   const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior:"smooth", block:"start" });
 
   useEffect(() => {
@@ -741,8 +751,17 @@ export default function Landing() {
             <button className="lp-nav-link" onClick={() => scrollTo(catRef)}>Categories</button>
           </div>
           <div className="lp-nav-btns">
-            <a href="/login"  className="lp-btn-ghost">Sign in</a>
-            <a href="/signup" className="lp-btn-solid">Get started</a>
+            {isAuthenticated ? (
+              <a href="/feed" className="lp-btn-solid">
+                Go to feed
+                <i className="ti ti-arrow-right" style={{fontSize:13, marginLeft:5}} aria-hidden="true"/>
+              </a>
+            ) : (
+              <>
+                <a href="/login"  className="lp-btn-ghost">Sign in</a>
+                <a href="/signup" className="lp-btn-solid">Get started</a>
+              </>
+            )}
           </div>
         </nav>
 
@@ -758,10 +777,17 @@ export default function Landing() {
               Real posts from real neighbours. Alerts, lost pets, free stuff, local events — everything your area is talking about, visible only to people nearby.
             </p>
             <div className="lp-hero-ctas">
-              <a href="/signup" className="lp-cta-primary">
-                Join Nook
-                <i className="ti ti-arrow-right" aria-hidden="true"/>
-              </a>
+              {isAuthenticated ? (
+                <a href="/feed" className="lp-cta-primary">
+                  Go to your feed
+                  <i className="ti ti-arrow-right" aria-hidden="true"/>
+                </a>
+              ) : (
+                <a href="/signup" className="lp-cta-primary">
+                  Join Nook
+                  <i className="ti ti-arrow-right" aria-hidden="true"/>
+                </a>
+              )}
               <button className="lp-cta-secondary" onClick={() => scrollTo(howRef)}>
                 How it works
               </button>
