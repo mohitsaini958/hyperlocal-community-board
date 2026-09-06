@@ -6,8 +6,8 @@ A geo-fenced neighbourhood feed where posts are only visible to people within **
 
 ## Live Demo
 
-> **Frontend:** [your-app.vercel.app](https://hyperlocal-community-board-dun.vercel.app)  
-> **API:** [your-api.onrender.com](https://hyperlocal-community-board.onrender.com)
+> **Frontend:** [hyperlocal-community-board-dun.vercel.app](https://hyperlocal-community-board-dun.vercel.app)  
+> **API:** [hyperlocal-community-board.onrender.com](https://hyperlocal-community-board.onrender.com)
 
 📹 [60-second walkthrough — real-time update demo](https://loom.com/your-link)
 
