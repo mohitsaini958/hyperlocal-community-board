@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 
@@ -99,14 +99,17 @@ const imgStyles = {
      userLat  — viewer's latitude
      userLng  — viewer's longitude
 ───────────────────────────────────────── */
-const PostCard = ({ post, userLat, userLng }) => {
+const PostCard = ({ post, userLat, userLng , voteCount: socketVoteCount}) => {
   const navigate = useNavigate();
 
   // read current user id — used to determine initial voted state
   const currentUserId = localStorage.getItem("userId");
 
   // ── vote state — initialised from the post object
-  const [voteCount, setVoteCount] = useState(post.upvotes?.length ?? 0);
+const [voteCount, setVoteCount] = useState(
+  socketVoteCount ?? post.upvotes?.length ?? 0
+);
+
   const [hasVoted,  setHasVoted]  = useState(
     post.upvotes?.some(id => id.toString() === currentUserId) ?? false
   );
@@ -145,6 +148,12 @@ const PostCard = ({ post, userLat, userLng }) => {
       setVoting(false);
     }
   };
+
+  useEffect(() => {
+  if (socketVoteCount !== undefined) {
+    setVoteCount(socketVoteCount);
+  }
+}, [socketVoteCount]);
 
   const badge        = BADGE_STYLES[post.category] || BADGE_STYLES.general;
   const commentCount = post.commentCount ?? 0;

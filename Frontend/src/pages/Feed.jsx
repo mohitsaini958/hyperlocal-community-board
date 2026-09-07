@@ -448,6 +448,7 @@ export default function Feed() {
   const [category,   setCategory]   = useState("");
   const [page,       setPage]       = useState(1);
   const [hasMore,    setHasMore]    = useState(true);
+  const [voteCounts, setVoteCounts] = useState({});
 
   /* ── fetch posts ── */
   const fetchPosts = async (reset = false) => {
@@ -506,19 +507,27 @@ export default function Feed() {
   /* ── Socket — vote_update ──
      backend emits { postId, voteCount } to the geo room
      update the matching card's count in place — no refetch needed  */
-  useEffect(() => {
-    socket.on("vote_update", ({ postId, voteCount }) => {
-      setPosts(prev =>
-        prev.map(post =>
-          post._id.toString() === postId.toString()
-            ? { ...post, upvotes: Array(voteCount).fill(null) }
-            : post
-        )
-      );
-    });
+useEffect(() => {
+  const handleVoteUpdate = (data) => {
+    const { postId, voteCount } = data || {};
 
-    return () => { socket.off("vote_update"); };
-  }, [socket]);
+    if (!postId || typeof voteCount !== "number") {
+      console.warn("Invalid vote_update payload:", data);
+      return;
+    }
+
+    setVoteCounts(prev => ({
+      ...prev,
+      [String(postId)]: voteCount,
+    }));
+  };
+
+  socket.on("vote_update", handleVoteUpdate);
+
+  return () => {
+    socket.off("vote_update", handleVoteUpdate);
+  };
+}, []);
 
   /* ── re-fetch when location or category changes ── */
   useEffect(() => {
@@ -687,6 +696,7 @@ export default function Feed() {
               post={post}
               userLat={lat}
               userLng={lng}
+              voteCount={voteCounts[String(post._id)]}
             />
           ))}
 
