@@ -43,8 +43,8 @@ const updateLocation=useCallback(async(latitude,longitude)=>{
     }
 },[]);
 
-const fetchLocation=useCallback(()=>{
-    if(!navigator.geolocation){
+const fetchLocation = useCallback(() => {
+    if (!navigator.geolocation) {
         setError("Geolocation is not supported by your browser.");
         setLoading(false);
         return;
@@ -53,36 +53,43 @@ const fetchLocation=useCallback(()=>{
     setLoading(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(async(position)=>{
-        const {latitude,longitude}=position.coords;
-        await updateLocation(latitude,longitude);
-        setLat(latitude);
-        setLng(longitude);
-        setLoading(false);
-    },
-    (err)=>{
-        setLoading(false);
-        switch(err.code){
-            case err.PERMISSION_DENIED:
-            setError("PERMISSION_DENIED");
-            break;
-            case err.POSITION_UNAVAILABLE:
-            setError("POSITION_UNAVAILABLE");
-            break;
-            case err.TIMEOUT:
-            setError("TIMEOUT");
-            break;
-            default:
-            setError("UNKNOWN");    
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+
+            setLat(latitude);
+            setLng(longitude);
+            setLoading(false);
+
+            await updateLocation(latitude, longitude);
+        },
+        (err) => {
+            setLoading(false);
+
+            switch (err.code) {
+                case err.PERMISSION_DENIED:
+                    setError("PERMISSION_DENIED");
+                    break;
+
+                case err.POSITION_UNAVAILABLE:
+                    setError("POSITION_UNAVAILABLE");
+                    break;
+
+                case err.TIMEOUT:
+                    setError("TIMEOUT");
+                    break;
+
+                default:
+                    setError("UNKNOWN");
+            }
+        },
+        {
+            enableHighAccuracy: false,
+            timeout: 20000,
+            maximumAge: 300000,
         }
-    },
-    {
-        enableHighAccuracy:true,
-        timeout:10000,
-        maximumAge:0,
-    }
-);
-},[updateLocation]);
+    );
+}, [updateLocation]);
 
  useEffect(()=>{
     fetchLocation();
