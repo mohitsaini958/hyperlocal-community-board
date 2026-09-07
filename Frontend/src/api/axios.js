@@ -32,28 +32,19 @@ api.interceptors.response.use(
     (response) => response,
 
     async (error) => {
-
-        const originalRequest =
-            error.config;
+        const originalRequest = error.config;
 
         if (
             error.response?.status === 401 &&
-            !originalRequest._retry
+            !originalRequest._retry &&
+            !originalRequest.url?.includes("/auth/refresh")
         ) {
-
-            originalRequest._retry =
-                true;
+            originalRequest._retry = true;
 
             try {
+                const response = await api.post("/auth/refresh");
 
-                const response =
-                    await api.post(
-                        "/auth/refresh"
-                    );
-
-                const newAccessToken =
-                    response.data
-                        .accessToken;
+                const newAccessToken = response.data.accessToken;
 
                 localStorage.setItem(
                     "accessToken",
@@ -63,34 +54,20 @@ api.interceptors.response.use(
                 originalRequest.headers.Authorization =
                     `Bearer ${newAccessToken}`;
 
-                return api(
-                    originalRequest
-                );
+                return api(originalRequest);
 
-            } catch (
-                refreshError
-            ) {
+            } catch (refreshError) {
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("user");
+                localStorage.removeItem("userId");
 
-                localStorage.removeItem(
-                    "accessToken"
-                );
+                window.location.href = "/login";
 
-                localStorage.removeItem(
-                    "user"
-                );
-
-                window.location.href =
-                    "/login";
-
-                return Promise.reject(
-                    refreshError
-                );
+                return Promise.reject(refreshError);
             }
         }
 
-        return Promise.reject(
-            error
-        );
+        return Promise.reject(error);
     }
 );
 
