@@ -325,7 +325,7 @@ const styles = `
 const CATEGORIES = [
   { label: "All",         value: ""           },
   { label: "🚨 Alert",    value: "Alert"      },
-  { label: "🐾 Lost pet", value: "Lost"   },
+  { label: "🐾 Lost pet", value: "Lost"       },
   { label: "📦 Free",     value: "free-stuff" },
   { label: "🗓 Event",    value: "event"      },
   { label: "❓ Question", value: "question"   },
@@ -365,8 +365,8 @@ const calcDist = (lat1, lng1, lat2, lng2) => {
   const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return d < 1 ? `${Math.round(d * 1000)}m` : `${d.toFixed(1)}km`;
 };
- 
- const NookMark = () => (
+
+const NookMark = () => (
   <svg width="16" height="16" viewBox="0 0 22 22" fill="none" aria-hidden="true">
     <circle cx="11" cy="8" r="4.5" stroke="white" strokeWidth="2.2"/>
     <circle cx="11" cy="8" r="1.8" fill="white"/>
@@ -388,78 +388,6 @@ const SkeletonCard = () => (
     <div className="skel skel-foot"/>
   </div>
 );
-
-/* ─────────────────────────────────── */
-/*  PostCard                           */
-/* ─────────────────────────────────── */
-
-// const PostCard = ({ post, userLat, userLng }) => {
-//   const navigate = useNavigate();
-//   const badge    = BADGE[post.category] || BADGE.general;
-
-//   const dist = userLat && userLng && post.location?.coordinates
-//     ? calcDist(userLat, userLng,
-//         post.location.coordinates[1],
-//         post.location.coordinates[0])
-//     : null;
-
-//   return (
-//     <div
-//       className="feed-card"
-//       onClick={() => navigate(`/posts/${post._id}`)}>
-
-//       {/* top row — badge + meta */}
-//       <div className="feed-card-top">
-//         <div style={{display:"flex",alignItems:"center",gap:6}}>
-//           <span
-//             className="feed-badge"
-//             style={{background: badge.bg, color: badge.color}}>
-//             {post.category.replace("-", " ")}
-//           </span>
-//           {post.isAnonymous && (
-//             <span className="feed-anon">anonymous</span>
-//           )}
-//         </div>
-//         <div className="feed-meta">
-//           {dist && (
-//             <>
-//               <i className="ti ti-map-pin" style={{fontSize:11}} aria-hidden="true"/>
-//               {dist}
-//               <span>·</span>
-//             </>
-//           )}
-//           <span>{timeAgo(post.createdAt)}</span>
-//         </div>
-//       </div>
-
-//       {/* title */}
-//       <div className="feed-card-title">{post.title}</div>
-
-//       {/* body preview — 2 lines max */}
-//       {post.body && (
-//         <div className="feed-card-body">{post.body}</div>
-//       )}
-
-//       {/* footer — vote count + comment count + distance */}
-//       <div className="feed-card-footer">
-//         <div className="feed-card-stat">
-//           <i className="ti ti-arrow-up" style={{fontSize:14}} aria-hidden="true"/>
-//           {post.upvotes?.length ?? 0}
-//         </div>
-//         <div className="feed-card-stat">
-//           <i className="ti ti-message" style={{fontSize:14}} aria-hidden="true"/>
-//           {post.commentCount ?? 0}
-//         </div>
-//         {dist && (
-//           <div className="feed-card-dist">
-//             <i className="ti ti-map-pin" style={{fontSize:11}} aria-hidden="true"/>
-//             {" "}{dist}
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
 
 /* ─────────────────────────────────── */
 /*  LocationError                      */
@@ -496,7 +424,6 @@ const LocationError = ({ error, onRetry }) => {
 export default function Feed() {
   const navigate = useNavigate();
 
-  // location
   const {
     lat, lng, neighborhood,
     error: locError,
@@ -504,31 +431,29 @@ export default function Feed() {
     refetch,
   } = useGeolocation();
 
-  const userId = localStorage.getItem("userId");
-  const { logout } = useAuthContext();
+  const userId        = localStorage.getItem("userId");
+  const { logout }    = useAuthContext();
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const socket = useSocket(
-  userId,
-  lat,
-  lng
-);
+  const socket = useSocket(userId, lat, lng);
 
   // feed state
-  const [posts,     setPosts]     = useState([]);
-  const [loading,   setLoading]   = useState(false);
-  const [category,  setCategory]  = useState("");
-  const [page,      setPage]      = useState(1);
-  const [hasMore,   setHasMore]   = useState(true);
+  const [posts,      setPosts]      = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+  const [category,   setCategory]   = useState("");
+  const [page,       setPage]       = useState(1);
+  const [hasMore,    setHasMore]    = useState(true);
 
   /* ── fetch posts ── */
   const fetchPosts = async (reset = false) => {
     if (!lat || !lng) return;
     setLoading(true);
+    setFetchError(false);
 
     try {
       const currentPage = reset ? 1 : page;
@@ -550,61 +475,50 @@ export default function Feed() {
       setHasMore(data.posts.length === 20);
     } catch (err) {
       console.error("Failed to fetch posts:", err.message);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
   };
 
+  /* ── Socket — new_post ── */
   useEffect(() => {
-
-  socket.on(
-    "new_post",
-    (newPost) => {
-
+    socket.on("new_post", (newPost) => {
       setPosts(prev => {
-
-        const exists = prev.some(
-          p => p._id === newPost._id
-        );
-
+        const exists = prev.some(p => p._id === newPost._id);
         if (exists) return prev;
-
-        return [
-          newPost,
-          ...prev
-        ];
+        return [newPost, ...prev];
       });
-
-    }
-  );
-
-  return () => {
-
-    socket.off(
-      "new_post"
-    );
-
-  };
-
-}, [socket]);
-
-useEffect(() => {
-
-    socket.on("post_deleted", ({ postId }) => {
-
-        setPosts(prev =>
-            prev.filter(
-                post => post._id !== postId
-            )
-        );
-
     });
 
-    return () => {
-        socket.off("post_deleted");
-    };
+    return () => { socket.off("new_post"); };
+  }, [socket]);
 
-}, [socket]);
+  /* ── Socket — post_deleted ── */
+  useEffect(() => {
+    socket.on("post_deleted", ({ postId }) => {
+      setPosts(prev => prev.filter(post => post._id !== postId));
+    });
+
+    return () => { socket.off("post_deleted"); };
+  }, [socket]);
+
+  /* ── Socket — vote_update ──
+     backend emits { postId, voteCount } to the geo room
+     update the matching card's count in place — no refetch needed  */
+  useEffect(() => {
+    socket.on("vote_update", ({ postId, voteCount }) => {
+      setPosts(prev =>
+        prev.map(post =>
+          post._id.toString() === postId.toString()
+            ? { ...post, upvotes: Array(voteCount).fill(null) }
+            : post
+        )
+      );
+    });
+
+    return () => { socket.off("vote_update"); };
+  }, [socket]);
 
   /* ── re-fetch when location or category changes ── */
   useEffect(() => {
@@ -632,7 +546,7 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMore, loading, lat, lng, category, page]);
 
-  /* ── location loading — show topbar + skeletons ── */
+  /* ── location loading ── */
   if (locLoading) {
     return (
       <>
@@ -691,13 +605,6 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* <button
-            className="feed-bell"
-            onClick={() => navigate("/notifications")}
-            aria-label="Notifications">
-            <i className="ti ti-bell"
-              style={{fontSize:18, color:"#555"}} aria-hidden="true"/>
-          </button> */}
           <div className="feed-topbar-right">
             <NotificationBell/>
             <button
@@ -730,8 +637,25 @@ useEffect(() => {
             [...Array(5)].map((_, i) => <SkeletonCard key={i}/>)
           )}
 
-          {/* empty state */}
-          {!loading && posts.length === 0 && (
+          {/* network / API error */}
+          {fetchError && !loading && (
+            <div className="feed-loc-err">
+              <div className="feed-loc-err-icon">
+                <i className="ti ti-wifi-off"
+                  style={{fontSize:22, color:"#ef4444"}} aria-hidden="true"/>
+              </div>
+              <h3>Couldn't load posts</h3>
+              <p>Check your connection and try again.</p>
+              <button
+                className="feed-retry"
+                onClick={() => { setFetchError(false); fetchPosts(true); }}>
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* empty state — only when no error */}
+          {!loading && !fetchError && posts.length === 0 && (
             <div className="feed-empty">
               <div className="feed-empty-icon">
                 <i className="ti ti-map-pin"
@@ -765,7 +689,6 @@ useEffect(() => {
               userLng={lng}
             />
           ))}
-          
 
           {/* loading more indicator */}
           {loading && posts.length > 0 && (

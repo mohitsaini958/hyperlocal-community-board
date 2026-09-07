@@ -102,7 +102,7 @@ export const createPost=asyncHandler(async (req,res,next) => {
 
         io.to(roomId).emit(
             "new_post",
-            post
+            populatePost
         );
 
         return res.status(201).json({
