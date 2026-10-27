@@ -19,32 +19,33 @@ export const getNearbyPosts = asyncHandler(async (req, res,next) => {
     const pageNumber = Number(page) || 1;
     const skip = (pageNumber - 1) * limit;
 
-    const query = {
-      expiresAt: {
-        $gt: new Date(),
-      },
-      location: {
-        $near: {
-          $geometry: {
-            type: "Point",
-            coordinates: [userLng, userLat],
-          },
-          $maxDistance: 10000, // 2 km
-        },
-      },
-    };
-
+    const maxDistance = 10000; // metres
+    const baseFilter = { expiresAt: { $gt: new Date() } };
     if (category) {
-      query.category = category;
+      baseFilter.category = category;
     }
 
-    const posts = await Post.find(query)
-      .populate("author", "username avatar reputation")
-    //   .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-     const total = posts.length;
+    const [posts, total] = await Promise.all([
+      Post.find({
+        ...baseFilter,
+        location: {
+          $near: {
+            $geometry: { type: "Point", coordinates: [userLng, userLat] },
+            $maxDistance: maxDistance,
+          },
+        },
+      })
+        .populate("author", "username avatar reputation")
+        .skip(skip)
+        .limit(limit),
+      // $near is not allowed in countDocuments, $geoWithin is
+      Post.countDocuments({
+        ...baseFilter,
+        location: {
+          $geoWithin: { $centerSphere: [[userLng, userLat], maxDistance / 6378100] },
+        },
+      }),
+    ]);
 
     return res.status(200).json({
       success: true,
@@ -102,7 +103,7 @@ export const createPost=asyncHandler(async (req,res,next) => {
 
         io.to(roomId).emit(
             "new_post",
-            post
+            populatePost
         );
 
         return res.status(201).json({
@@ -120,7 +121,7 @@ export const getPost=asyncHandler(async (req,res,next) => {
 
         const post=await Post.findById(id).populate("author","username avatar reputation");
         if(!post){
-            return next(new AppError("Post not found",400));
+            return next(new AppError("Post not found",404));
         }
 
         res.status(200).json({
@@ -138,7 +139,7 @@ export const deletePost=asyncHandler(async (req,res,next) => {
         const post=await Post.findById(id);
 
         if(!post){
-            return next(new AppError("Post not found",400));
+            return next(new AppError("Post not found",404));
         }
 
         if(post.author.toString() !== req.user._id.toString()){
@@ -168,6 +169,9 @@ export const deletePost=asyncHandler(async (req,res,next) => {
 export const toggleVote=asyncHandler(async (req,res,next) => {
         const {id}=req.params;
         const userId=req.user._id;
+        if(!mongoose.Types.ObjectId.isValid(id)){
+            return next(new AppError("Invalid post id",400));
+        }
         const post=await Post.findById(id);
         if(!post){
             return next(new AppError("Post not found",404));
@@ -183,7 +187,7 @@ export const toggleVote=asyncHandler(async (req,res,next) => {
         else{
             post.upvotes.push(userId);
             action="added";
-            if(post.author.toString!==userId.toString()){
+            if(post.author.toString()!==userId.toString()){
              const notification=await Notifications.create({
                     recipient:post.author,
                     sender:userId,

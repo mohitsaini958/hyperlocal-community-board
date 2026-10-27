@@ -11,6 +11,14 @@ export const getNotifications=asyncHandler(async (req,res) => {
         });
 })
 
+export const markOneRead=asyncHandler(async (req,res) => {
+        await Notification.updateOne(
+            {_id:req.params.id,recipient:req.user._id},
+            {$set:{isRead:true}}
+        );
+        return res.status(200).json({success:true});
+})
+
 export const markAllRead=asyncHandler(async (req,res) => {
         await Notification.updateMany({
             recipient:req.user._id,

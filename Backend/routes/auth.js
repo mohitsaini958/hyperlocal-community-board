@@ -1,7 +1,7 @@
 import express from "express"
 
 import {
-    registerUser,loginUser,refresh,forgetPassword,resetPassword,
+    registerUser,loginUser,refresh,logoutUser,forgetPassword,resetPassword,
 } from "../controllers/authController.js"
 
 import {
@@ -16,6 +16,8 @@ router.post("/register",registerUser);
 router.post("/login",loginUser);
 
 router.post("/refresh",refresh);
+
+router.post("/logout",logoutUser);
 
 router.post("/forget-password",forgetPassword);
 

@@ -12,7 +12,7 @@ export const createReport=asyncHandler(async (req,res,next) => {
 
         const post=await Post.findById(id);
         if(!post){
-            return next(new AppError("Post not found",401));
+            return next(new AppError("Post not found",404));
         }
 
         const existingReport = await Report.findOne({

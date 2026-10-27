@@ -327,10 +327,8 @@ export default function MapView() {
     const fetchPosts = async () => {
       setLoadingPosts(true);
       try {
-        const { data } = await axios.get("/api/posts/nearby", {
-          params: { lat, lng, radius: 2 },
-        });
-        setPosts(data);
+        const { data } = await axios.get("/posts/nearby");
+        setPosts(data.posts || []);
       } catch (err) {
         console.error("MapView fetch failed:", err.message);
       } finally {

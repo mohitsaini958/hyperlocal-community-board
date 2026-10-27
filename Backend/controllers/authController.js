@@ -4,7 +4,13 @@ import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
+import { issueTokens, signAccessToken, clearRefreshCookie } from "../utils/tokens.js";
 
+const publicUser=(user)=>({
+    id:user._id,
+    username:user.username,
+    email:user.email,
+});
 
 export const registerUser=asyncHandler(async (req,res,next) => {
         const {username,email,password,confirmPassword}=req.body;
@@ -18,7 +24,7 @@ export const registerUser=asyncHandler(async (req,res,next) => {
 
         const existingUser=await User.findOne({
             $or:[
-                {email},
+                {email:email.toLowerCase().trim()},
                 {username},
             ]
         });
@@ -33,51 +39,13 @@ export const registerUser=asyncHandler(async (req,res,next) => {
             password,
         });
 
-        const accessToken=jwt.sign(
-            {
-                id:user._id,
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn:"1d",
-            }
-        )
-
-        const refreshToken=jwt.sign(
-            {
-                id:user._id,
-            },
-            process.env.JWT_REFRESH_SECRET,
-            {
-                expiresIn:"7d",
-            }
-        )
-
-        res.cookie(
-            "refreshToken",
-            refreshToken,
-            {
-                httpOnly: true,
-                secure: false,
-                sameSite: "strict",
-                maxAge:
-                    7 *
-                    24 *
-                    60 *
-                    60 *
-                    1000,
-            }
-        );
+        const accessToken=issueTokens(res,user._id);
 
         res.status(201).json({
             success:true,
             message:"User Registered Successfully",
             accessToken,
-            user:{
-                id:user._id,
-                username:user.username,
-                email:user.email,
-            }
+            user:publicUser(user),
         })
 })
 
@@ -87,110 +55,70 @@ export const loginUser = asyncHandler(async(req,res,next)=>{
             return next(new AppError("Email and Password are required",400));
         }
 
-        const user=await User.findOne({email});
+        const user=await User.findOne({email:email.toLowerCase().trim()});
 
-        if(!user){
-            return next(new AppError("User not found",404));
+        if(!user || !(await user.comparePassword(password))){
+            return next(new AppError("Invalid email or password",400));
         }
 
-        const isMatch=await user.comparePassword(password);
-
-        if(!isMatch){
-            return next(new AppError("Invalid Credentials",400));
-        }
-
-         const accessToken = jwt.sign(
-            {
-                id: user._id,
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "1d",
-            }
-        );
-
-        const refreshToken = jwt.sign(
-            {
-                id: user._id,
-            },
-            process.env.JWT_REFRESH_SECRET,
-            {
-                expiresIn: "7d",
-            }
-        );
-
-        res.cookie(
-            "refreshToken",
-            refreshToken,
-            {
-                httpOnly: true,
-                secure: false,
-                sameSite: "strict",
-                maxAge:
-                    7 *
-                    24 *
-                    60 *
-                    60 *
-                    1000,
-            }
-        );
+        const accessToken=issueTokens(res,user._id);
 
         res.status(200).json({
             success:true,
             message:"Login Successfully",
             accessToken,
-            user:{
-                id:user._id,
-                username:user.username,
-                email:user.email
-            }
+            user:publicUser(user),
         })
 })
 
 export const refresh=asyncHandler(async (req,res,next) => {
-        const refreshToken=req.cookies.refreshToken;
+        const refreshToken=req.cookies?.refreshToken;
 
         if(!refreshToken){
-            return next(new AppError("Refresh token missing",401));
+            return next(new AppError("Refresh token missing",401,"REFRESH_MISSING"));
         }
 
-        const decoded=jwt.verify(
-            refreshToken,
-            process.env.JWT_REFRESH_SECRET
-        );
+        let decoded;
+        try {
+            decoded=jwt.verify(refreshToken,process.env.JWT_REFRESH_SECRET);
+        } catch (error) {
+            clearRefreshCookie(res);
+            const expired=error.name==="TokenExpiredError";
+            return next(new AppError(
+                expired ? "Session expired, please sign in again" : "Invalid refresh token",
+                401,
+                expired ? "REFRESH_EXPIRED" : "REFRESH_INVALID"
+            ));
+        }
 
-        const user=await User.findById(
-            decoded.id
-        );
+        const user=await User.findById(decoded.id);
 
         if (!user) {
-            return next(new AppError("User not found",404));
+            clearRefreshCookie(res);
+            return next(new AppError("User no longer exists",401,"USER_NOT_FOUND"));
         }
-
-         const accessToken = jwt.sign(
-            {
-                id: user._id,
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "1d",
-            }
-        );
 
         res.status(200).json({
             success: true,
-            accessToken,
+            accessToken:signAccessToken(user._id),
+            user:publicUser(user),
         });
-
-        
     })
+
+export const logoutUser=(req,res)=>{
+    clearRefreshCookie(res);
+    res.status(200).json({
+        success:true,
+        message:"Logged out",
+    });
+};
 
 export const forgetPassword=asyncHandler(async (req,res,next) => {
    const {email}=req.body;
     if(!email){
         return next(new AppError("Email is required",400));
     }
-    const user=await User.findOne({email});
+    const user=await User.findOne({email:email.toLowerCase().trim()});
     if(!user){
         return next(new AppError("user not found",404));
     }
@@ -206,16 +134,25 @@ export const forgetPassword=asyncHandler(async (req,res,next) => {
 
     await user.save();
 
-    const resetUrl=`http://localhost:5173/reset-password/${resetToken}`;
+    const resetUrl=`${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
      const message =
         `Reset your password using this link:\n\n${resetUrl}`;
 
-   await sendEmail(
-    user.email,
-    "Password reset",
-    message
-);
+    try {
+        await sendEmail(
+            user.email,
+            "Password reset",
+            message
+        );
+    } catch (error) {
+        user.resetPasswordToken=null;
+        user.resetPasswordExpire=null;
+        await user.save();
+        console.error("Reset email failed:",error.message);
+        return next(new AppError("Could not send reset email, try again later",500));
+    }
+
     res.status(200).json({
         success:true,
         message:"Reset link send to email",
@@ -262,4 +199,3 @@ export const resetPassword=asyncHandler(async (req,res,next) => {
                 "Password reset successful",
         });
 })
-

@@ -41,21 +41,23 @@ export const createComment=asyncHandler(async (req,res,next) => {
             parentComment,
         });
 
-       const notification=await Notifications.create({
-             recipient: post.author,
-             sender: req.user._id,
-             post: post._id,
-             type: "comment",
-        });
-
         const io =req.app.get("io");
 
-        io.to(
-            `user_${post.author}`
-        ).emit(
-            "notification",
-            notification
-        );
+        if(post.author.toString()!==req.user._id.toString()){
+            const notification=await Notifications.create({
+                recipient: post.author,
+                sender: req.user._id,
+                post: post._id,
+                type: "comment",
+            });
+
+            io.to(
+                `user_${post.author}`
+            ).emit(
+                "notification",
+                notification
+            );
+        }
 
         await Post.findByIdAndUpdate(
             postId,
@@ -89,7 +91,7 @@ export const deleteComments=asyncHandler(async (req,res,next) => {
         if(!comment){
             return next(new AppError("Comment not found",404));
         }
-        if(comment.author._id.toString()!==req.user._id.toString()){
+        if(comment.author.toString()!==req.user._id.toString()){
             return next(new AppError("Not authorized",403));
         }
 
