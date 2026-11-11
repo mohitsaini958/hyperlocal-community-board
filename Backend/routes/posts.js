@@ -5,7 +5,7 @@ import postLimiter from "../middlewares/postLimiter.js";
 
 const router=express.Router();
 
-router.get("/nearby",optionalAuth,getNearbyPosts)
+router.get("/nearby",protect,getNearbyPosts)
 router.post("/",protect,postLimiter,createPost)
 router.get("/:id",getPost);
 router.delete("/:id",protect,deletePost);
